@@ -1,0 +1,9 @@
+{
+    "name": "hexlet/code",
+    "require": {
+        "slim/slim": "^4.0"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^4.0"
+    }
+}
