@@ -3,6 +3,11 @@
     "require": {
         "slim/slim": "^4.0"
     },
+    "autoload": {
+        "psr-4": {
+            "Php\\Project\\": "src/"
+        }    
+    },
     "require-dev": {
         "squizlabs/php_codesniffer": "^4.0"
     },
