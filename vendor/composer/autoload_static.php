@@ -8,11 +8,14 @@ class ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3
 {
     public static $files = array (
         '253c157292f75eb38082b5acb06f3f01' => __DIR__ . '/..' . '/nikic/fast-route/src/functions.php',
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
+            'Slim\\Psr7\\' => 10,
+            'Slim\\Http\\' => 10,
             'Slim\\' => 5,
         ),
         'P' => 
@@ -23,17 +26,22 @@ class ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3
             'Psr\\Container\\' => 14,
             'Php\\Project\\' => 12,
         ),
-        'N' => 
-        array (
-            'Nyholm\\Psr7\\' => 12,
-        ),
         'F' => 
         array (
+            'Fig\\Http\\Message\\' => 17,
             'FastRoute\\' => 10,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'Slim\\Psr7\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/slim/psr7/src',
+        ),
+        'Slim\\Http\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/slim/http/src',
+        ),
         'Slim\\' => 
         array (
             0 => __DIR__ . '/..' . '/slim/slim/Slim',
@@ -60,9 +68,9 @@ class ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
-        'Nyholm\\Psr7\\' => 
+        'Fig\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/nyholm/psr7/src',
+            0 => __DIR__ . '/..' . '/fig/http-message-util/src',
         ),
         'FastRoute\\' => 
         array (
