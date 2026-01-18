@@ -13,4 +13,4 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
 
-CMD ["bash", "-c", "make start"]
+CMD ["bash", "-c", "make migrate && make start"]
