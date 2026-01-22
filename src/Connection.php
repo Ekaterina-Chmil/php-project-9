@@ -1,7 +1,5 @@
 <?php
 
-use PDO;
-
 // Убедимся, что DATABASE_URL существует
 if (!isset($_ENV['DATABASE_URL']) || empty($_ENV['DATABASE_URL'])) {
     die('Ошибка: переменная окружения DATABASE_URL не установлена.');
