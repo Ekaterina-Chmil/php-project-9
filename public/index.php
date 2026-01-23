@@ -44,7 +44,7 @@ $app = AppFactory::create();
 $app->get('/', function ($request, $response) use ($container) {
     $renderer = $container->get('view');
     $flash = $container->get('flash');
-    
+
     return $renderer->render($response, 'home.phtml', [
         'flash' => $flash
     ]);
@@ -54,7 +54,7 @@ $app->get('/', function ($request, $response) use ($container) {
 $app->post('/urls', function ($request, $response) use ($container) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
-    
+
     // Получаем URL из формы
     $url = trim($request->getParsedBody()['url']['name'] ?? '');
 
@@ -92,10 +92,16 @@ $app->post('/urls', function ($request, $response) use ($container) {
     return $response->withHeader('Location', '/urls')->withStatus(302);
 });
 
-// Временный маршрут /urls (обязательно для перенаправления)
-$app->get('/urls', function ($request, $response) {
-    // На шаге 3 просто перенаправляем на главную
-    return $response->withHeader('Location', '/')->withStatus(302);
+// Страница списка сайтов
+$app->get('/urls', function ($request, $response) use ($container) {
+    $pdo = $container->get('connectionDB');
+    $stmt = $pdo->query("SELECT * FROM urls ORDER BY id DESC");
+    $urls = $stmt->fetchAll();
+
+    $renderer = $container->get('view');
+    return $renderer->render($response, 'urls.phtml', [
+        'urls' => $urls
+    ]);
 });
 
 // Запуск приложения
