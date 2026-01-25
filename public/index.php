@@ -104,5 +104,51 @@ $app->get('/urls', function ($request, $response) use ($container) {
     ]);
 });
 
+// Страница деталей сайта
+$app->get('/urls/{id}', function ($request, $response, $args) use ($container) {
+    $pdo = $container->get('connectionDB');
+
+    // Получаем сайт
+    $stmt = $pdo->prepare("SELECT * FROM urls WHERE id = ?");
+    $stmt->execute([$args['id']]);
+    $url = $stmt->fetch();
+
+    if (!$url) {
+        return $response->withStatus(404);
+    }
+
+    // Получаем проверки
+    $stmt = $pdo->prepare("SELECT * FROM url_checks WHERE url_id = ? ORDER BY id DESC");
+    $stmt->execute([$args['id']]);
+    $checks = $stmt->fetchAll();
+
+    $renderer = $container->get('view');
+    return $renderer->render($response, 'url.phtml', [
+        'url' => $url,
+        'checks' => $checks
+    ]);
+});
+
+// Обработчик проверки
+$app->post('/urls/{id}/checks', function ($request, $response, $args) use ($container) {
+    $pdo = $container->get('connectionDB');
+
+    // Проверяем, существует ли URL
+    $stmt = $pdo->prepare("SELECT id FROM urls WHERE id = ?");
+    $stmt->execute([$args['id']]);
+    if (!$stmt->fetch()) {
+        return $response->withStatus(404);
+    }
+
+    // Создаём проверку (базовая логика)
+    $stmt = $pdo->prepare("INSERT INTO url_checks (url_id, created_at) VALUES (?, NOW())");
+    $stmt->execute([$args['id']]);
+
+    $flash = $container->get('flash');
+    $flash->addMessage('success', 'Страница успешно проверена');
+
+    return $response->withHeader('Location', "/urls/{$args['id']}")->withStatus(302);
+});
+
 // Запуск приложения
 $app->run();
