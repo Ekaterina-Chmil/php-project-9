@@ -46,10 +46,10 @@
                                 </a>
                             </td>
                             <td>
-                                <!-- Пока пусто (будет заполнено на шаге 6) -->
+                                <?= htmlspecialchars($url['last_check'] ?? '') ?>
                             </td>
                             <td>
-                                <!-- Пока пусто (будет заполнено на шаге 6) -->
+                                <?= htmlspecialchars($url['status_code'] ?? '') ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>

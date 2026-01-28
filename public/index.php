@@ -95,7 +95,21 @@ $app->post('/urls', function ($request, $response) use ($container) {
 // Страница списка сайтов
 $app->get('/urls', function ($request, $response) use ($container) {
     $pdo = $container->get('connectionDB');
-    $stmt = $pdo->query("SELECT * FROM urls ORDER BY id DESC");
+    $stmt = $pdo->query("
+        SELECT 
+            u.id,
+            u.name,
+            u.created_at,
+            c.status_code,
+            c.created_at as last_check
+        FROM urls u
+        LEFT JOIN (
+            SELECT DISTINCT ON (url_id) *
+            FROM url_checks
+            ORDER BY url_id, id DESC
+        ) c ON u.id = c.url_id
+        ORDER BY u.id DESC
+    ");
     $urls = $stmt->fetchAll();
 
     $renderer = $container->get('view');
@@ -107,6 +121,7 @@ $app->get('/urls', function ($request, $response) use ($container) {
 // Страница деталей сайта
 $app->get('/urls/{id}', function ($request, $response, $args) use ($container) {
     $pdo = $container->get('connectionDB');
+    $flash = $container->get('flash');
 
     // Получаем сайт
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE id = ?");
@@ -125,28 +140,45 @@ $app->get('/urls/{id}', function ($request, $response, $args) use ($container) {
     $renderer = $container->get('view');
     return $renderer->render($response, 'url.phtml', [
         'url' => $url,
-        'checks' => $checks
+        'checks' => $checks,
+        'flash' => $flash
     ]);
 });
 
 // Обработчик проверки
 $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($container) {
     $pdo = $container->get('connectionDB');
-
-    // Проверяем, существует ли URL
-    $stmt = $pdo->prepare("SELECT id FROM urls WHERE id = ?");
+    $flash = $container->get('flash');
+    
+    // Получаем URL
+    $stmt = $pdo->prepare("SELECT * FROM urls WHERE id = ?");
     $stmt->execute([$args['id']]);
-    if (!$stmt->fetch()) {
+    $url = $stmt->fetch();
+    
+    if (!$url) {
         return $response->withStatus(404);
     }
-
-    // Создаём проверку (базовая логика)
-    $stmt = $pdo->prepare("INSERT INTO url_checks (url_id, created_at) VALUES (?, NOW())");
-    $stmt->execute([$args['id']]);
-
-    $flash = $container->get('flash');
-    $flash->addMessage('success', 'Страница успешно проверена');
-
+    
+    // Выполняем HTTP-запрос
+    try {
+        $client = new \GuzzleHttp\Client(['timeout' => 10]);
+        $guzzleResponse = $client->request('GET', $url['name']);
+        $statusCode = $guzzleResponse->getStatusCode();
+        
+        // Сохраняем проверку с кодом ответа
+        $stmt = $pdo->prepare("
+            INSERT INTO url_checks (url_id, status_code, created_at) 
+            VALUES (?, ?, NOW())
+        ");
+        $stmt->execute([$args['id'], $statusCode]);
+        
+        $flash->addMessage('success', 'Страница успешно проверена');
+        
+    } catch (\Exception $e) {
+        // При ошибке — не создаём запись
+        $flash->addMessage('error', 'Произошла ошибка при проверке');
+    }
+    
     return $response->withHeader('Location', "/urls/{$args['id']}")->withStatus(302);
 });
 

@@ -3,7 +3,7 @@
         'name' => 'hexlet/code',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '628351422c670165cd98e1ab03f0246c49519cc4',
+        'reference' => '24a964da919cc56e8d9b76980f5d2d0ec8de5837',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -28,10 +28,37 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'guzzlehttp/guzzle' => array(
+            'pretty_version' => '7.10.0',
+            'version' => '7.10.0.0',
+            'reference' => 'b51ac707cfa420b7bfd4e4d5e510ba8008e822b4',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/guzzle',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/promises' => array(
+            'pretty_version' => '2.3.0',
+            'version' => '2.3.0.0',
+            'reference' => '481557b130ef3790cf82b713667b43030dc9c957',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/promises',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/psr7' => array(
+            'pretty_version' => '2.8.0',
+            'version' => '2.8.0.0',
+            'reference' => '21dc724a0583619cd1652f673303492272778051',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/psr7',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'hexlet/code' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '628351422c670165cd98e1ab03f0246c49519cc4',
+            'reference' => '24a964da919cc56e8d9b76980f5d2d0ec8de5837',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -97,6 +124,21 @@
                 0 => '^1.0',
             ),
         ),
+        'psr/http-client' => array(
+            'pretty_version' => '1.0.3',
+            'version' => '1.0.3.0',
+            'reference' => 'bb5906edc1c324c9a05aa0873d40117941e5fa90',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/http-client',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'psr/http-client-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '1.0',
+            ),
+        ),
         'psr/http-factory' => array(
             'pretty_version' => '1.1.0',
             'version' => '1.1.0.0',
@@ -109,7 +151,8 @@
         'psr/http-factory-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '^1.0',
+                0 => '1.0',
+                1 => '^1.0',
             ),
         ),
         'psr/http-message' => array(
@@ -124,7 +167,8 @@
         'psr/http-message-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '^1.0 || ^2.0',
+                0 => '1.0',
+                1 => '^1.0 || ^2.0',
             ),
         ),
         'psr/http-server-handler' => array(
@@ -216,6 +260,15 @@
             'install_path' => __DIR__ . '/../squizlabs/php_codesniffer',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'symfony/deprecation-contracts' => array(
+            'pretty_version' => 'v3.6.0',
+            'version' => '3.6.0.0',
+            'reference' => '63afe740e99a13ba87ec199bb07bbdee937a5b62',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/deprecation-contracts',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'symfony/polyfill-ctype' => array(
             'pretty_version' => 'v1.33.0',
