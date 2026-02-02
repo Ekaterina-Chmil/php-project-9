@@ -89,7 +89,7 @@ $app->post('/urls', function ($request, $response) use ($container) {
     $stmt->execute([$url]);
 
     $flash->addMessage('success', 'Страница успешно добавлена');
-    return $response->withHeader('Location', '/urls')->withStatus(302);
+    return $response->withHeader('Location', '/')->withStatus(302);
 });
 
 // Страница списка сайтов
@@ -149,37 +149,42 @@ $app->get('/urls/{id}', function ($request, $response, $args) use ($container) {
 $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($container) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
-    
+
     // Получаем URL
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE id = ?");
     $stmt->execute([$args['id']]);
     $url = $stmt->fetch();
-    
+
     if (!$url) {
         return $response->withStatus(404);
     }
-    
+
     // Выполняем HTTP-запрос
     try {
-        $client = new \GuzzleHttp\Client(['timeout' => 10]);
+        $client = new \GuzzleHttp\Client([
+            'timeout' => 10,
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (compatible; PageAnalyzer/1.0)'
+            ]
+        ]);
         $guzzleResponse = $client->request('GET', $url['name']);
         $statusCode = $guzzleResponse->getStatusCode();
         $html = (string) $guzzleResponse->getBody();
 
         // Парсим HTML
         $crawler = new \Symfony\Component\DomCrawler\Crawler($html);
-        
+
         // Извлекаем данные
         $h1 = $crawler->filter('h1')->first()->text() ?? null;
         $title = $crawler->filter('title')->first()->text() ?? null;
         $description = null;
-        
+
         // Ищем meta description
         $metaDescription = $crawler->filter('meta[name="description"]')->first();
         if ($metaDescription->count()) {
             $description = $metaDescription->attr('content');
         }
-        
+
         // Сохраняем всё в БД
         $stmt = $pdo->prepare("
             INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) 
@@ -192,13 +197,12 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
             $title,
             $description
         ]);
-        
+
         $flash->addMessage('success', 'Страница успешно проверена');
-        
     } catch (\Exception $e) {
         $flash->addMessage('error', 'Произошла ошибка при проверке');
     }
-    
+
     return $response->withHeader('Location', "/urls/{$args['id']}")->withStatus(302);
 });
 
