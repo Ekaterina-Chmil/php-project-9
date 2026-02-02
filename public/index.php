@@ -81,7 +81,7 @@ $app->post('/urls', function ($request, $response) use ($container) {
     $stmt->execute([$url]);
     if ($stmt->fetch()) {
         $flash->addMessage('info', 'Страница уже существует');
-        return $response->withHeader('Location', '/urls')->withStatus(302);
+        return $response->withHeader('Location', '/')->withStatus(302);
     }
 
     // Сохраняем в БД

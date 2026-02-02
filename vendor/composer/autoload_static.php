@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3
+class ComposerStaticInitf64e42bc70d5fe7039db345b68b4fc2b
 {
     public static $files = array (
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
@@ -40,6 +40,10 @@ class ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3
             'Psr\\Container\\' => 14,
             'Php\\Project\\' => 12,
             'PhpOption\\' => 10,
+        ),
+        'M' => 
+        array (
+            'Masterminds\\' => 12,
         ),
         'L' => 
         array (
@@ -139,6 +143,10 @@ class ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3
         array (
             0 => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption',
         ),
+        'Masterminds\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/masterminds/html5/src',
+        ),
         'Laravel\\SerializableClosure\\' => 
         array (
             0 => __DIR__ . '/..' . '/laravel/serializable-closure/src',
@@ -193,9 +201,9 @@ class ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitddb1818bf24a0dcc0914ee346d0c0af3::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitf64e42bc70d5fe7039db345b68b4fc2b::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitf64e42bc70d5fe7039db345b68b4fc2b::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitf64e42bc70d5fe7039db345b68b4fc2b::$classMap;
 
         }, null, ClassLoader::class);
     }

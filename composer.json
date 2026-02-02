@@ -9,8 +9,8 @@
         "slim/flash": "^0.4.0",
         "php-di/php-di": "^7.1",
         "guzzlehttp/guzzle": "^7.10",
-        "symfony/dom-crawler": "^8.0",
-        "symfony/css-selector": "^8.0"
+        "symfony/dom-crawler": "^6.4",
+        "symfony/css-selector": "^6.4"
     },
     "autoload": {
         "psr-4": {
