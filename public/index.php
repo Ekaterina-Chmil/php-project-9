@@ -164,18 +164,38 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
         $client = new \GuzzleHttp\Client(['timeout' => 10]);
         $guzzleResponse = $client->request('GET', $url['name']);
         $statusCode = $guzzleResponse->getStatusCode();
+        $html = (string) $guzzleResponse->getBody();
+
+        // Парсим HTML
+        $crawler = new \Symfony\Component\DomCrawler\Crawler($html);
         
-        // Сохраняем проверку с кодом ответа
+        // Извлекаем данные
+        $h1 = $crawler->filter('h1')->first()->text() ?? null;
+        $title = $crawler->filter('title')->first()->text() ?? null;
+        $description = null;
+        
+        // Ищем meta description
+        $metaDescription = $crawler->filter('meta[name="description"]')->first();
+        if ($metaDescription->count()) {
+            $description = $metaDescription->attr('content');
+        }
+        
+        // Сохраняем всё в БД
         $stmt = $pdo->prepare("
-            INSERT INTO url_checks (url_id, status_code, created_at) 
-            VALUES (?, ?, NOW())
+            INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) 
+            VALUES (?, ?, ?, ?, ?, NOW())
         ");
-        $stmt->execute([$args['id'], $statusCode]);
+        $stmt->execute([
+            $args['id'],
+            $statusCode,
+            $h1,
+            $title,
+            $description
+        ]);
         
         $flash->addMessage('success', 'Страница успешно проверена');
         
     } catch (\Exception $e) {
-        // При ошибке — не создаём запись
         $flash->addMessage('error', 'Произошла ошибка при проверке');
     }
     
