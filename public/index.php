@@ -79,17 +79,22 @@ $app->post('/urls', function ($request, $response) use ($container) {
     // Проверка уникальности
     $stmt = $pdo->prepare("SELECT id FROM urls WHERE name = ?");
     $stmt->execute([$url]);
-    if ($stmt->fetch()) {
+    $existingUrl = $stmt->fetch(); // ← Сохраняем результат
+
+    if ($existingUrl) {
         $flash->addMessage('info', 'Страница уже существует');
-        return $response->withHeader('Location', '/')->withStatus(302);
+        return $response->withHeader('Location', "/urls/{$existingUrl['id']}")->withStatus(302);
     }
 
     // Сохраняем в БД
     $stmt = $pdo->prepare("INSERT INTO urls (name, created_at) VALUES (?, NOW())");
     $stmt->execute([$url]);
 
+    // Получаем ID только что вставленной записи
+    $urlId = $pdo->lastInsertId();
+
     $flash->addMessage('success', 'Страница успешно добавлена');
-    return $response->withHeader('Location', '/')->withStatus(302);
+    return $response->withHeader('Location', "/urls/{$urlId}")->withStatus(302);
 });
 
 // Страница списка сайтов
