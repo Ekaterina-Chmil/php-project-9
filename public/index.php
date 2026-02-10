@@ -162,7 +162,7 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
     // Выполняем HTTP-запрос
     try {
         $client = new \GuzzleHttp\Client([
-            'timeout' => 10,
+            'timeout' => 5,
             'headers' => [
                 'User-Agent' => 'Mozilla/5.0 (compatible; PageAnalyzer/1.0)'
             ]
@@ -199,6 +199,8 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
         ]);
 
         $flash->addMessage('success', 'Страница успешно проверена');
+    } catch (\GuzzleHttp\Exception\ConnectException $e) {
+        $flash->addMessage('error', 'Произошла ошибка при проверке');
     } catch (\Exception $e) {
         $flash->addMessage('error', 'Произошла ошибка при проверке');
     }
