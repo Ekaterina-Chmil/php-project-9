@@ -60,20 +60,41 @@ $app->post('/urls', function ($request, $response) use ($container) {
 
     // Валидация: не пустой
     if (empty($url)) {
-        $flash->addMessage('error', 'URL обязателен');
-        return $response->withHeader('Location', '/')->withStatus(302);
+        $renderer = $container->get('view');
+        return $renderer->render(
+            $response->withStatus(422),
+            'home.phtml',
+            [
+            'error' => 'Некорректный URL',
+            'urlValue' => $url
+            ]
+        );
     }
 
     // Валидация: не длиннее 255 символов
     if (strlen($url) > 255) {
-        $flash->addMessage('error', 'URL превышает 255 символов');
-        return $response->withHeader('Location', '/')->withStatus(302);
+        $renderer = $container->get('view');
+        return $renderer->render(
+            $response->withStatus(422),
+            'home.phtml',
+            [
+            'error' => 'Некорректный URL',
+            'urlValue' => $url
+            ]
+        );
     }
 
     // Валидация: корректный URL
     if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        $flash->addMessage('error', 'Некорректный URL');
-        return $response->withHeader('Location', '/')->withStatus(302);
+        $renderer = $container->get('view');
+        return $renderer->render(
+            $response->withStatus(422),
+            'home.phtml',
+            [
+            'error' => 'Некорректный URL',
+            'urlValue' => $url
+            ]
+        );
     }
 
     // Проверка уникальности
@@ -100,6 +121,10 @@ $app->post('/urls', function ($request, $response) use ($container) {
 // Страница списка сайтов
 $app->get('/urls', function ($request, $response) use ($container) {
     $pdo = $container->get('connectionDB');
+    $renderer = $container->get('view');
+    $flash = $container->get('flash');
+
+    // Получаем все сайты
     $stmt = $pdo->query("
         SELECT 
             u.id,
@@ -117,9 +142,9 @@ $app->get('/urls', function ($request, $response) use ($container) {
     ");
     $urls = $stmt->fetchAll();
 
-    $renderer = $container->get('view');
     return $renderer->render($response, 'urls.phtml', [
-        'urls' => $urls
+        'urls' => $urls,
+        'flash' => $flash
     ]);
 });
 
