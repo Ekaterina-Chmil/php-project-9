@@ -54,46 +54,28 @@ $app->get('/', function ($request, $response) use ($container) {
 $app->post('/urls', function ($request, $response) use ($container) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
+    $renderer = $container->get('view');
 
     // Получаем URL из формы
     $url = trim($request->getParsedBody()['url']['name'] ?? '');
+    $error = null;
 
-    // Валидация: не пустой
+    // 1. Сбор ошибок валидации
     if (empty($url)) {
-        $renderer = $container->get('view');
-        return $renderer->render(
-            $response->withStatus(422),
-            'home.phtml',
-            [
-            'error' => 'URL обязателен',
-            'urlValue' => $url
-            ]
-        );
+        $error = 'URL обязателен';
+    } elseif (strlen($url) > 255) {
+        $error = 'URL превышает 255 символов';
+    } elseif (!filter_var($url, FILTER_VALIDATE_URL) || !in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'])) {
+        // Проверка структуры ИЛИ проверка схемы (http/https)
+        $error = 'Некорректный URL';
     }
 
-    // Валидация: не длиннее 255 символов
-    if (strlen($url) > 255) {
-        $renderer = $container->get('view');
+    // 2. Если есть ошибка — возвращаем её и завершаем
+    if ($error) {
         return $renderer->render(
             $response->withStatus(422),
             'home.phtml',
-            [
-            'error' => 'URL превышает 255 символов',
-            'urlValue' => $url
-            ]
-        );
-    }
-
-    // Валидация: корректный URL
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        $renderer = $container->get('view');
-        return $renderer->render(
-            $response->withStatus(422),
-            'home.phtml',
-            [
-            'error' => 'Некорректный URL',
-            'urlValue' => $url
-            ]
+            ['error' => $error, 'urlValue' => $url]
         );
     }
 
