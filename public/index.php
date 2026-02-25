@@ -65,7 +65,7 @@ $app->post('/urls', function ($request, $response) use ($container) {
             $response->withStatus(422),
             'home.phtml',
             [
-            'error' => 'Некорректный URL',
+            'error' => 'URL обязателен',
             'urlValue' => $url
             ]
         );
@@ -78,7 +78,7 @@ $app->post('/urls', function ($request, $response) use ($container) {
             $response->withStatus(422),
             'home.phtml',
             [
-            'error' => 'Некорректный URL',
+            'error' => 'URL превышает 255 символов',
             'urlValue' => $url
             ]
         );

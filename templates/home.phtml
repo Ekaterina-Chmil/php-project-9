@@ -35,11 +35,10 @@
                             value="<?= htmlspecialchars($urlValue ?? '') ?>"
                             class="form-control form-control-lg"
                             placeholder="https://www.example.com"
-                            required
                         >
                     </div>
                     <div class="col-2">
-                        <input type="submit" class="btn btn-primary btn-lg w-100 text-uppercase" value="Проверить">
+                        <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase mx-3" value="Проверить">
                     </div>
                     <?php if (!empty($error)): ?>
                         <div class="col-12">
