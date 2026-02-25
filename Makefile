@@ -7,7 +7,7 @@ install:
 	composer install
 
 migrate:
-	psql -a -d $(DATABASE_URL) -f database.sql	
+	psql -a -d $(DATABASE_URL) -f database.sql
 
 lint:
 	./vendor/bin/phpcs --standard=PSR12 --extensions=php public/ templates/
