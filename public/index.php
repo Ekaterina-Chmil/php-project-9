@@ -187,8 +187,8 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
         $crawler = new \Symfony\Component\DomCrawler\Crawler($html);
 
         // Извлекаем данные
-        $h1 = $crawler->filter('h1')->first()->text() ?? null;
-        $title = $crawler->filter('title')->first()->text() ?? null;
+        $h1 = $crawler->filter('h1')->first()->text();
+        $title = $crawler->filter('title')->first()->text();
         $description = null;
 
         // Ищем meta description
