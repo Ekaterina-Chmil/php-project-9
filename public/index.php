@@ -79,9 +79,13 @@ $app->post('/urls', function ($request, $response) use ($container) {
         );
     }
 
+    // Извлекаем хост из URL
+    $parsedUrl = parse_url($url);
+    $host = $parsedUrl['host'] ?? '';
+
     // Проверка уникальности
     $stmt = $pdo->prepare("SELECT id FROM urls WHERE name = ?");
-    $stmt->execute([$url]);
+    $stmt->execute([$host]);
     $existingUrl = $stmt->fetch(); // ← Сохраняем результат
 
     if ($existingUrl) {
@@ -91,7 +95,7 @@ $app->post('/urls', function ($request, $response) use ($container) {
 
     // Сохраняем в БД
     $stmt = $pdo->prepare("INSERT INTO urls (name, created_at) VALUES (?, NOW())");
-    $stmt->execute([$url]);
+    $stmt->execute([$host]);
 
     // Получаем ID только что вставленной записи
     $urlId = $pdo->lastInsertId();
