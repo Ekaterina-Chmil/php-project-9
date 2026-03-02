@@ -95,7 +95,7 @@ $app->post('/urls', function ($request, $response) use ($container) {
 
     // Сохраняем в БД
     $stmt = $pdo->prepare("INSERT INTO urls (name, created_at) VALUES (?, NOW())");
-    $stmt->execute([$host]);
+    $stmt->execute([$url]);
 
     // Получаем ID только что вставленной записи
     $urlId = $pdo->lastInsertId();
