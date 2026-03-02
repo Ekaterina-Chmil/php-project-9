@@ -83,8 +83,11 @@ $app->post('/urls', function ($request, $response) use ($container) {
     $parsedUrl = parse_url($url);
     $host = $parsedUrl['host'] ?? '';
 
-    // Проверка уникальности
-    $stmt = $pdo->prepare("SELECT id FROM urls WHERE name = ?");
+    // Проверка уникальности ПО ХОСТУ (извлекаем хост из сохранённых URL)
+    $stmt = $pdo->prepare("
+        SELECT id FROM urls 
+        WHERE SUBSTRING(name FROM '://([^/]+)') = ?
+    ");
     $stmt->execute([$host]);
     $existingUrl = $stmt->fetch(); // ← Сохраняем результат
 
