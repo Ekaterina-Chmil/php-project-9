@@ -202,7 +202,7 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
         }
 
         // ОБРЕЗКА текста если слишком длинный
-        $maxLength = 255;
+        $maxLength = 100;
 
         if (strlen($h1) > $maxLength) {
             $h1 = mb_substr($h1, 0, $maxLength - 3) . '...';
