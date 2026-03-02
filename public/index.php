@@ -201,6 +201,21 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
             $description = $metaDescription->attr('content');
         }
 
+        // ОБРЕЗКА текста если слишком длинный
+        $maxLength = 255;
+
+        if (strlen($h1) > $maxLength) {
+            $h1 = mb_substr($h1, 0, $maxLength - 3) . '...';
+        }
+
+        if (strlen($title) > $maxLength) {
+            $title = mb_substr($title, 0, $maxLength - 3) . '...';
+        }
+
+        if ($description && strlen($description) > $maxLength) {
+            $description = mb_substr($description, 0, $maxLength - 3) . '...';
+        }
+
         // Сохраняем всё в БД
         $stmt = $pdo->prepare("
             INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) 
