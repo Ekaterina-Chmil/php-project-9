@@ -231,9 +231,9 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
 
         $flash->addMessage('success', 'Страница успешно проверена');
     } catch (\GuzzleHttp\Exception\ConnectException $e) {
-        $flash->addMessage('error', 'Произошла ошибка при проверке');
+        $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
     } catch (\Exception $e) {
-        $flash->addMessage('error', 'Произошла ошибка при проверке');
+        $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
     }
 
     return $response->withHeader('Location', "/urls/{$args['id']}")->withStatus(302);
