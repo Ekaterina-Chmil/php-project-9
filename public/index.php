@@ -23,7 +23,15 @@ $container = new Container();
 
 // Регистрируем зависимости
 $container->set('connectionDB', function () {
-    return require __DIR__ . '/../src/Connection.php';
+    $config = require __DIR__ . '/../src/Connection.php';
+
+    // Создаём PDO здесь, в контейнере
+    return new PDO(
+        $config['dsn'],
+        $config['username'],
+        $config['password'],
+        $config['options']
+    );
 });
 
 $container->set('view', function () {
@@ -56,7 +64,7 @@ $errorMiddleware->setDefaultErrorHandler(
     ) {
 
     // Определяем статус код
-        $statusCode = $exception->getCode();
+        $statusCode = (int) $exception->getCode();
         if ($statusCode < 400 || $statusCode >= 600) {
             $statusCode = 500;
         }

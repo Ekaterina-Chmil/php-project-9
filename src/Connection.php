@@ -1,31 +1,33 @@
 <?php
 
-// Убедимся, что DATABASE_URL существует
-if (!isset($_ENV['DATABASE_URL']) || empty($_ENV['DATABASE_URL'])) {
-    die('Ошибка: переменная окружения DATABASE_URL не установлена.');
+$databaseUrl = $_ENV['DATABASE_URL'] ?? getenv('DATABASE_URL');
+
+// Вместо die() — выбрасываем исключение
+if (!$databaseUrl) {
+    throw new \RuntimeException('DATABASE_URL environment variable is not set');
 }
 
-// Парсим DATABASE_URL
-$databaseUrl = parse_url($_ENV['DATABASE_URL']);
-$username = $databaseUrl['user'] ?? 'ekaterinachmil';
-$password = $databaseUrl['pass'] ?? '';
-$host = $databaseUrl['host'] ?? 'localhost';
-$port = $databaseUrl['port'] ?? '5432';
-$dbName = ltrim($databaseUrl['path'] ?? '', '/');
+$parsedUrl = parse_url($databaseUrl);
 
-// Создаём PDO-соединение
-try {
-    $pdo = new PDO(
-        "pgsql:host=$host;port=$port;dbname=$dbName",
-        $username,
-        $password,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]
-    );
-} catch (PDOException $e) {
-    die("Ошибка подключения к базе данных: " . $e->getMessage());
+$host = $parsedUrl['host'] ?? 'localhost';
+$port = $parsedUrl['port'] ?? '5432';
+$dbName = ltrim($parsedUrl['path'] ?? '', '/');
+$username = $parsedUrl['user'] ?? '';
+$password = $parsedUrl['pass'] ?? '';
+
+$dsn = "pgsql:host={$host};port={$port};dbname={$dbName}";
+if (getenv('APP_ENV') === 'production') {
+    $dsn .= ';sslmode=require';
 }
 
-return $pdo;
+// Возвращаем ТОЛЬКО параметры (массив), без создания PDO
+return [
+    'dsn' => $dsn,
+    'username' => $username,
+    'password' => $password,
+    'options' => [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // PDO будет кидать исключения сам
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]
+];
