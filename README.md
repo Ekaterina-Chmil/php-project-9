@@ -38,7 +38,7 @@ make start
 ```
 
 5. Откройте в браузере:
-`http://localhost:8000`
+http://localhost:8000
 
 ## Использование
 

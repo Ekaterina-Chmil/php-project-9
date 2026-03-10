@@ -40,6 +40,46 @@ AppFactory::setContainer($container);
 // Создаём приложение
 $app = AppFactory::create();
 
+// Создаём приложение
+$app = AppFactory::create();
+
+// ✅ Обработка ошибок
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+
+$errorMiddleware->setDefaultErrorHandler(
+    function (
+        $request,
+        Throwable $exception,
+        bool $displayErrorDetails,
+        bool $logErrors,
+        bool $logErrorDetails
+    ) {
+
+    // Определяем статус код
+        $statusCode = $exception->getCode();
+        if ($statusCode < 400 || $statusCode >= 600) {
+            $statusCode = 500;
+        }
+
+    // Определяем сообщение
+        $message = $exception->getMessage();
+        if ($statusCode === 404) {
+            $message = 'Страница не найдена';
+        } elseif (empty($message) || $statusCode === 500) {
+            $message = 'Произошла ошибка сервера';
+        }
+
+    // Рендерим шаблон
+        $renderer = new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
+        $response = new \Slim\Psr7\Response();
+
+        return $renderer->render($response->withStatus($statusCode), 'error.phtml', [
+        'statusCode' => $statusCode,
+        'message' => $message
+        ]);
+    }
+);
+
 // Главная страница
 $app->get('/', function ($request, $response) use ($container) {
     $renderer = $container->get('view');
@@ -138,7 +178,7 @@ $app->get('/urls', function ($request, $response) use ($container) {
 });
 
 // Страница деталей сайта
-$app->get('/urls/{id}', function ($request, $response, $args) use ($container) {
+$app->get('/urls/{id:\d+}', function ($request, $response, $args) use ($container) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
 
@@ -148,7 +188,7 @@ $app->get('/urls/{id}', function ($request, $response, $args) use ($container) {
     $url = $stmt->fetch();
 
     if (!$url) {
-        return $response->withStatus(404);
+        throw new \Slim\Exception\HttpNotFoundException($request, 'Сайт не найден');
     }
 
     // Получаем проверки
