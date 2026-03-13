@@ -23,6 +23,7 @@ $container = new Container();
 
 // Регистрируем зависимости
 $container->set('connectionDB', function () {
+    // Используем константы: гибко и понятно
     $config = require __DIR__ . '/../src/Connection.php';
 
     // Создаём PDO здесь, в контейнере
@@ -48,8 +49,8 @@ AppFactory::setContainer($container);
 // Создаём приложение
 $app = AppFactory::create();
 
-// Создаём приложение
-$app = AppFactory::create();
+$routeCollector = $app->getRouteCollector();
+$router = $routeCollector->getRouteParser();
 
 // ✅ Обработка ошибок
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
@@ -61,6 +62,9 @@ $errorMiddleware->setDefaultErrorHandler(
         bool $displayErrorDetails,
         bool $logErrors,
         bool $logErrorDetails
+    ) use (
+        $container,
+        $router
     ) {
 
     // Определяем статус код
@@ -83,23 +87,25 @@ $errorMiddleware->setDefaultErrorHandler(
 
         return $renderer->render($response->withStatus($statusCode), 'error.phtml', [
         'statusCode' => $statusCode,
-        'message' => $message
+        'message' => $message,
+        'router' => $router
         ]);
     }
 );
 
 // Главная страница
-$app->get('/', function ($request, $response) use ($container) {
+$app->get('/', function ($request, $response) use ($container, $router) {
     $renderer = $container->get('view');
     $flash = $container->get('flash');
 
     return $renderer->render($response, 'home.phtml', [
-        'flash' => $flash
+        'flash' => $flash,
+        'router' => $router
     ]);
-});
+})->setName('home');
 
 // Обработчик добавления URL
-$app->post('/urls', function ($request, $response) use ($container) {
+$app->post('/urls', function ($request, $response) use ($container, $router) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
     $renderer = $container->get('view');
@@ -123,7 +129,11 @@ $app->post('/urls', function ($request, $response) use ($container) {
         return $renderer->render(
             $response->withStatus(422),
             'home.phtml',
-            ['error' => $error, 'urlValue' => $url]
+            [
+                'error' => $error,
+                'urlValue' => $url,
+                'router' => $router
+            ]
         );
     }
 
@@ -153,10 +163,10 @@ $app->post('/urls', function ($request, $response) use ($container) {
 
     $flash->addMessage('success', 'Страница успешно добавлена');
     return $response->withHeader('Location', "/urls/{$urlId}")->withStatus(302);
-});
+})->setName('urls.store');
 
 // Страница списка сайтов
-$app->get('/urls', function ($request, $response) use ($container) {
+$app->get('/urls', function ($request, $response) use ($container, $router) {
     $pdo = $container->get('connectionDB');
     $renderer = $container->get('view');
     $flash = $container->get('flash');
@@ -181,12 +191,13 @@ $app->get('/urls', function ($request, $response) use ($container) {
 
     return $renderer->render($response, 'urls.phtml', [
         'urls' => $urls,
-        'flash' => $flash
+        'flash' => $flash,
+        'router' => $router
     ]);
-});
+})->setName('urls.index');
 
 // Страница деталей сайта
-$app->get('/urls/{id:\d+}', function ($request, $response, $args) use ($container) {
+$app->get('/urls/{id:[0-9]+}', function ($request, $response, $args) use ($container, $router) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
 
@@ -208,12 +219,13 @@ $app->get('/urls/{id:\d+}', function ($request, $response, $args) use ($containe
     return $renderer->render($response, 'url.phtml', [
         'url' => $url,
         'checks' => $checks,
-        'flash' => $flash
+        'flash' => $flash,
+        'router' => $router
     ]);
-});
+})->setName('urls.show');
 
 // Обработчик проверки
-$app->post('/urls/{id}/checks', function ($request, $response, $args) use ($container) {
+$app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use ($container, $router) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
 
@@ -223,7 +235,8 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
     $url = $stmt->fetch();
 
     if (!$url) {
-        return $response->withStatus(404);
+        // ✅ Выбрасываем исключение — оно перехватится обработчиком ошибок!
+        throw new \Slim\Exception\HttpNotFoundException($request, 'Сайт не найден');
     }
 
     // Выполняем HTTP-запрос
@@ -288,7 +301,7 @@ $app->post('/urls/{id}/checks', function ($request, $response, $args) use ($cont
     }
 
     return $response->withHeader('Location', "/urls/{$args['id']}")->withStatus(302);
-});
+})->setName('urls.check');
 
 // Запуск приложения
 $app->run();
