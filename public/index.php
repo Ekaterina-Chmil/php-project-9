@@ -62,10 +62,7 @@ $errorMiddleware->setDefaultErrorHandler(
         bool $displayErrorDetails,
         bool $logErrors,
         bool $logErrorDetails
-    ) use (
-        $container,
-        $router
-    ) {
+    ) use ($router) {
 
     // Определяем статус код
         $statusCode = (int) $exception->getCode();
@@ -225,7 +222,7 @@ $app->get('/urls/{id:[0-9]+}', function ($request, $response, $args) use ($conta
 })->setName('urls.show');
 
 // Обработчик проверки
-$app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use ($container, $router) {
+$app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use ($container) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
 
