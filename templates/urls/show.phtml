@@ -30,28 +30,7 @@
     <main class="flex-grow-1">
         <div class="container-lg mt-3">
             <!-- Flash-сообщения -->
-<?php $messages = $flash->getMessages(); ?>
-
-<?php if (!empty($messages)): ?>
-    <?php foreach ($messages as $type => $messageList): ?>
-        <?php foreach ($messageList as $message): ?>
-            <?php
-            // Вычисляем класс через if/else
-            if ($type === 'success') {
-                $alertClass = 'alert-success';
-            } elseif ($type === 'error') {
-                $alertClass = 'alert-danger';
-            } else {
-                $alertClass = 'alert-warning';
-            }
-            ?>
-            <div class="alert <?= $alertClass ?>">
-                <?= htmlspecialchars($message) ?>
-            </div>
-            
-        <?php endforeach; ?>
-    <?php endforeach; ?>
-<?php endif; ?>
+            <?php require __DIR__ . '/../partials/alerts.phtml'; ?>
 
             <h1>Сайт: <?= htmlspecialchars($url['name']) ?></h1>
             

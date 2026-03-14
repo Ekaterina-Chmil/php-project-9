@@ -1,0 +1,22 @@
+<?php
+// templates/partials/alerts.phtml
+$messages = $flash->getMessages();
+if (!empty($messages)):
+    foreach ($messages as $type => $messageList):
+        foreach ($messageList as $message):
+            if ($type === 'success') {
+                $alertClass = 'alert-success';
+            } elseif ($type === 'error') {
+                $alertClass = 'alert-danger';
+            } else {
+                $alertClass = 'alert-warning';
+            }
+            ?>
+            <div class="alert <?= $alertClass ?>">
+                <?= htmlspecialchars($message) ?>
+            </div>
+            <?php
+        endforeach;
+    endforeach;
+endif;
+?>

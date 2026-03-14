@@ -186,7 +186,7 @@ $app->get('/urls', function ($request, $response) use ($container, $router) {
     ");
     $urls = $stmt->fetchAll();
 
-    return $renderer->render($response, 'urls.phtml', [
+    return $renderer->render($response, 'urls/index.phtml', [
         'urls' => $urls,
         'flash' => $flash,
         'router' => $router
@@ -213,7 +213,7 @@ $app->get('/urls/{id:[0-9]+}', function ($request, $response, $args) use ($conta
     $checks = $stmt->fetchAll();
 
     $renderer = $container->get('view');
-    return $renderer->render($response, 'url.phtml', [
+    return $renderer->render($response, 'urls/show.phtml', [
         'url' => $url,
         'checks' => $checks,
         'flash' => $flash,
