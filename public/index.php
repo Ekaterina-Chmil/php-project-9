@@ -132,7 +132,7 @@ $app->post('/urls', function ($request, $response) use ($container, $router) {
 
     if (!$v->validate()) {
         $errors = $v->errors();
-        $error = $errors['name'][0];
+        $error = $errors['name'][0] ?? 'Ошибка валидации';
 
         $renderer->setLayout('layout.phtml');
         return $renderer->render($response->withStatus(422), 'home.phtml', [
