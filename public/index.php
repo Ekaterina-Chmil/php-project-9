@@ -147,24 +147,29 @@ $app->post('/urls', function ($request, $response) use ($container, $router) {
     $url = strtolower(trim($data['name']));
     // 3️⃣ БИЗНЕС-ЛОГИКА: извлекаем хост и проверяем уникальность
     $parsedUrl = parse_url($url);
-    $host = $parsedUrl['host'] ?? '';
-    $stmt = $pdo->prepare("
-        SELECT id FROM urls 
-        WHERE SUBSTRING(name FROM '://([^/]+)') = ?
-    ");
-    $stmt->execute([$host]);
+    // Собираем чистый URL: схема (http/https) + хост (google.com)
+    $normalizedUrl = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
+
+    $stmt = $pdo->prepare("SELECT id FROM urls WHERE name = ?");
+    $stmt->execute([$normalizedUrl]);
     $existingUrl = $stmt->fetch();
+
     if ($existingUrl) {
         $flash->addMessage('info', 'Страница уже существует');
-        return $response->withHeader('Location', "/urls/{$existingUrl['id']}")->withStatus(302);
+        $urlToShow = $router->urlFor('urls.show', ['id' => $existingUrl['id']]);
+        return $response->withRedirect($urlToShow);
     }
+
     // 4️⃣ Сохраняем в БД
     $stmt = $pdo->prepare("INSERT INTO urls (name, created_at) VALUES (?, NOW())");
-    $stmt->execute([$url]);
+    $stmt->execute([$normalizedUrl]);
     $urlId = $pdo->lastInsertId();
+
     $flash->addMessage('success', 'Страница успешно добавлена');
+
     // 5️⃣ Редирект на страницу созданного сайта
-    return $response->withHeader('Location', "/urls/{$urlId}")->withStatus(302);
+    $urlAfterCreate = $router->urlFor('urls.show', ['id' => $urlId]);
+    return $response->withRedirect($urlAfterCreate);
 })->setName('urls.store');
 
 // Страница списка сайтов
@@ -229,7 +234,7 @@ $app->get('/urls/{id:[0-9]+}', function ($request, $response, $args) use ($conta
 })->setName('urls.show');
 
 // Обработчик проверки
-$app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use ($container) {
+$app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use ($container, $router) {
     $pdo = $container->get('connectionDB');
     $flash = $container->get('flash');
 
@@ -304,7 +309,9 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
         $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
     }
 
-    return $response->withHeader('Location', "/urls/{$args['id']}")->withStatus(302);
+    $urlAfterCheck = $router->urlFor('urls.show', ['id' => $args['id']]);
+
+    return $response->withRedirect($urlAfterCheck);
 })->setName('urls.check');
 
 // Запуск приложения
