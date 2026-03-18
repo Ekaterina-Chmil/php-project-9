@@ -1,5 +1,9 @@
 <?php
 
+// 🔴 ВРЕМЕННО: показать детали ошибок на экране
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 use Slim\Factory\AppFactory;
 use Slim\Views\PhpRenderer;
 use Slim\Flash\Messages;
@@ -36,7 +40,9 @@ $container->set('connectionDB', function () {
 });
 
 $container->set('view', function () {
-    return new PhpRenderer(__DIR__ . '/../templates');
+    $renderer = new PhpRenderer(__DIR__ . '/../templates');
+    $renderer->setLayout('layout.phtml');  // ✅ Задаём лейаут ОДИН раз здесь!
+    return $renderer;
 });
 
 $container->set('flash', function () {
@@ -62,7 +68,10 @@ $errorMiddleware->setDefaultErrorHandler(
         bool $displayErrorDetails,
         bool $logErrors,
         bool $logErrorDetails
-    ) use ($router) {
+    ) use (
+        $container,
+        $router
+    ) {
 
     // Определяем статус код
         $statusCode = (int) $exception->getCode();
@@ -78,14 +87,17 @@ $errorMiddleware->setDefaultErrorHandler(
             $message = 'Произошла ошибка сервера';
         }
 
-    // Рендерим шаблон
-        $renderer = new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
+        // ✅ Берём настроенный рендерер из контейнера
+        $renderer = $container->get('view');
+
+        // Создаём ответ (или берём из аргументов, если есть)
         $response = new \Slim\Psr7\Response();
 
         return $renderer->render($response->withStatus($statusCode), 'error.phtml', [
-        'statusCode' => $statusCode,
-        'message' => $message,
-        'router' => $router
+            'statusCode' => $statusCode,
+            'message' => $message,
+            'router' => $router,
+            'title' => 'Ошибка ' . $statusCode,
         ]);
     }
 );
@@ -97,7 +109,10 @@ $app->get('/', function ($request, $response) use ($container, $router) {
 
     return $renderer->render($response, 'home.phtml', [
         'flash' => $flash,
-        'router' => $router
+        'router' => $router,
+        'title' => 'Главная - Анализатор страниц',
+        'error' => null,
+        'urlValue' => null,
     ]);
 })->setName('home');
 
@@ -129,7 +144,9 @@ $app->post('/urls', function ($request, $response) use ($container, $router) {
             [
                 'error' => $error,
                 'urlValue' => $url,
-                'router' => $router
+                'router' => $router,
+                'title' => 'Ошибка - Анализатор страниц',  // ✅ Свой заголовок
+
             ]
         );
     }
@@ -189,7 +206,9 @@ $app->get('/urls', function ($request, $response) use ($container, $router) {
     return $renderer->render($response, 'urls/index.phtml', [
         'urls' => $urls,
         'flash' => $flash,
-        'router' => $router
+        'router' => $router,
+        'title' => 'Сайты - Анализатор страниц',  // ✅ Свой заголовок
+
     ]);
 })->setName('urls.index');
 
