@@ -1,13 +1,10 @@
 <?php
 
-// 🔴 ВРЕМЕННО: показать детали ошибок на экране
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 use Slim\Factory\AppFactory;
 use Slim\Views\PhpRenderer;
 use Slim\Flash\Messages;
 use DI\Container;
+use Valitron\Validator;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -118,64 +115,55 @@ $app->get('/', function ($request, $response) use ($container, $router) {
 
 // Обработчик добавления URL
 $app->post('/urls', function ($request, $response) use ($container, $router) {
-    $pdo = $container->get('connectionDB');
-    $flash = $container->get('flash');
-    $renderer = $container->get('view');
+        $pdo = $container->get('connectionDB');
+        $flash = $container->get('flash');
+        $renderer = $container->get('view');
 
-    // Получаем URL из формы
-    $url = trim($request->getParsedBody()['url']['name'] ?? '');
-    $error = null;
+    // 1️⃣ Получаем данные из формы
+        $data = $request->getParsedBody()['url'] ?? [];
 
-    // 1. Сбор ошибок валидации
-    if (empty($url)) {
-        $error = 'URL обязателен';
-    } elseif (strlen($url) > 255) {
-        $error = 'URL превышает 255 символов';
-    } elseif (!filter_var($url, FILTER_VALIDATE_URL) || !in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'])) {
-        // Проверка структуры ИЛИ проверка схемы (http/https)
-        $error = 'Некорректный URL';
+    // 2️⃣ ВАЛИДАЦИЯ через Valitron
+        \Valitron\Validator::lang('ru');
+        $v = new \Valitron\Validator($data);
+
+        $v->rule('required', 'name')->message('URL не может быть пустым');
+        $v->rule('lengthMax', 'name', 255)->message('URL слишком длинный');
+        $v->rule('url', 'name')->message('Некорректный URL');
+
+    if (!$v->validate()) {
+        $errors = $v->errors();
+        $error = $errors['name'][0];
+
+        $renderer->setLayout('layout.phtml');
+        return $renderer->render($response->withStatus(422), 'home.phtml', [
+            'error' => $error, // Здесь будет конкретный текст (пусто, длинно или криво)
+            'urlValue' => $data['name'] ?? '',
+            'router' => $router,
+            'title' => 'Ошибка - Анализатор страниц',
+        ]);
     }
 
-    // 2. Если есть ошибка — возвращаем её и завершаем
-    if ($error) {
-        return $renderer->render(
-            $response->withStatus(422),
-            'home.phtml',
-            [
-                'error' => $error,
-                'urlValue' => $url,
-                'router' => $router,
-                'title' => 'Ошибка - Анализатор страниц',  // ✅ Свой заголовок
-
-            ]
-        );
-    }
-
-    // Извлекаем хост из URL
+    // ✅ Валидация прошла — работаем с проверенными данными
+    $url = strtolower(trim($data['name']));
+    // 3️⃣ БИЗНЕС-ЛОГИКА: извлекаем хост и проверяем уникальность
     $parsedUrl = parse_url($url);
     $host = $parsedUrl['host'] ?? '';
-
-    // Проверка уникальности ПО ХОСТУ (извлекаем хост из сохранённых URL)
     $stmt = $pdo->prepare("
         SELECT id FROM urls 
         WHERE SUBSTRING(name FROM '://([^/]+)') = ?
     ");
     $stmt->execute([$host]);
-    $existingUrl = $stmt->fetch(); // ← Сохраняем результат
-
+    $existingUrl = $stmt->fetch();
     if ($existingUrl) {
         $flash->addMessage('info', 'Страница уже существует');
         return $response->withHeader('Location', "/urls/{$existingUrl['id']}")->withStatus(302);
     }
-
-    // Сохраняем в БД
+    // 4️⃣ Сохраняем в БД
     $stmt = $pdo->prepare("INSERT INTO urls (name, created_at) VALUES (?, NOW())");
     $stmt->execute([$url]);
-
-    // Получаем ID только что вставленной записи
     $urlId = $pdo->lastInsertId();
-
     $flash->addMessage('success', 'Страница успешно добавлена');
+    // 5️⃣ Редирект на страницу созданного сайта
     return $response->withHeader('Location', "/urls/{$urlId}")->withStatus(302);
 })->setName('urls.store');
 
