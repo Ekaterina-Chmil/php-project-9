@@ -5,6 +5,7 @@ use Slim\Views\PhpRenderer;
 use Slim\Flash\Messages;
 use DI\Container;
 use Valitron\Validator;
+use GuzzleHttp\Client;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -250,12 +251,7 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
 
     // Выполняем HTTP-запрос
     try {
-        $client = new \GuzzleHttp\Client([
-            'timeout' => 5,
-            'headers' => [
-                'User-Agent' => 'Mozilla/5.0 (compatible; PageAnalyzer/1.0)'
-            ]
-        ]);
+        $client = new Client(['timeout' => 5]);
         $guzzleResponse = $client->request('GET', $url['name']);
         $statusCode = $guzzleResponse->getStatusCode();
         $html = (string) $guzzleResponse->getBody();
@@ -264,8 +260,8 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
         $crawler = new \Symfony\Component\DomCrawler\Crawler($html);
 
         // Извлекаем данные
-        $h1 = $crawler->filter('h1')->first()->text();
-        $title = $crawler->filter('title')->first()->text();
+        $h1 = $crawler->filter('h1')->count() ? $crawler->filter('h1')->first()->text() : null;
+        $title = $crawler->filter('title')->count() ? $crawler->filter('title')->first()->text() : null;
         $description = null;
 
         // Ищем meta description
@@ -274,44 +270,19 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
             $description = $metaDescription->attr('content');
         }
 
-        // ОБРЕЗКА текста если слишком длинный
-        $maxLength = 100;
-
-        if (strlen($h1) > $maxLength) {
-            $h1 = mb_substr($h1, 0, $maxLength - 3) . '...';
-        }
-
-        if (strlen($title) > $maxLength) {
-            $title = mb_substr($title, 0, $maxLength - 3) . '...';
-        }
-
-        if ($description && strlen($description) > $maxLength) {
-            $description = mb_substr($description, 0, $maxLength - 3) . '...';
-        }
-
-        // Сохраняем всё в БД
+        // Сохраняем ПОЛНЫЕ данные в БД
         $stmt = $pdo->prepare("
             INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) 
             VALUES (?, ?, ?, ?, ?, NOW())
         ");
-        $stmt->execute([
-            $args['id'],
-            $statusCode,
-            $h1,
-            $title,
-            $description
-        ]);
+        $stmt->execute([$args['id'], $statusCode, $h1, $title, $description]);
 
         $flash->addMessage('success', 'Страница успешно проверена');
-    } catch (\GuzzleHttp\Exception\ConnectException $e) {
-        $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
     } catch (\Exception $e) {
-        $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
+        $flash->addMessage('error', 'Произошла ошибка при проверке');
     }
 
-    $urlAfterCheck = $router->urlFor('urls.show', ['id' => $args['id']]);
-
-    return $response->withRedirect($urlAfterCheck);
+    return $response->withRedirect($router->urlFor('urls.show', ['id' => $args['id']]));
 })->setName('urls.check');
 
 // Запуск приложения
