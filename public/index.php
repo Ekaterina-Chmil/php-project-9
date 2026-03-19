@@ -287,13 +287,13 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
 
         $flash->addMessage('success', 'Страница успешно проверена');
     // 2️⃣ ОШИБКИ
-} catch (ConnectException | RequestException $e) {
-    // Группируем два типа ошибок Guzzle в один блок
-    $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
-} catch (\Exception $e) {
-    // Для всех остальных непредвиденных случаев
-    $flash->addMessage('error', 'Произошла непредвиденная ошибка при анализе страницы');
-}
+    } catch (ConnectException | RequestException $e) {
+        // Группируем два типа ошибок Guzzle в один блок
+        $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
+    } catch (\Exception $e) {
+        // Для всех остальных непредвиденных случаев
+        $flash->addMessage('error', 'Произошла непредвиденная ошибка при анализе страницы');
+    }
 
     return $response->withRedirect($router->urlFor('urls.show', ['id' => $args['id']]));
 })->setName('urls.check');
