@@ -6,6 +6,8 @@ use Slim\Flash\Messages;
 use DI\Container;
 use Valitron\Validator;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -133,7 +135,7 @@ $app->post('/urls', function ($request, $response) use ($container, $router) {
 
     if (!$v->validate()) {
         $errors = $v->errors();
-        $error = $errors['name'][0] ?? 'Ошибка валидации';
+        $error = isset($errors['name']) ? reset($errors['name']) : 'Ошибка валидации';
 
         $renderer->setLayout('layout.phtml');
         return $renderer->render($response->withStatus(422), 'home.phtml', [
@@ -149,7 +151,9 @@ $app->post('/urls', function ($request, $response) use ($container, $router) {
     // 3️⃣ БИЗНЕС-ЛОГИКА: извлекаем хост и проверяем уникальность
     $parsedUrl = parse_url($url);
     // Собираем чистый URL: схема (http/https) + хост (google.com)
-    $normalizedUrl = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
+    $scheme = isset($parsedUrl['scheme']) ? strtolower($parsedUrl['scheme']) : 'http';
+    $host = isset($parsedUrl['host']) ? strtolower($parsedUrl['host']) : '';
+    $normalizedUrl = "{$scheme}://{$host}";
 
     $stmt = $pdo->prepare("SELECT id FROM urls WHERE name = ?");
     $stmt->execute([$normalizedUrl]);
@@ -259,9 +263,13 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
         // Парсим HTML
         $crawler = new \Symfony\Component\DomCrawler\Crawler($html);
 
-        // Извлекаем данные
-        $h1 = $crawler->filter('h1')->count() ? $crawler->filter('h1')->first()->text() : null;
-        $title = $crawler->filter('title')->count() ? $crawler->filter('title')->first()->text() : null;
+        // 1️⃣ БЕЗОПАСНО извлекаем данные (учитель просил проверять наличие тегов)
+        $h1Node = $crawler->filter('h1');
+        $h1 = $h1Node->count() ? $h1Node->first()->text() : null;
+
+        $titleNode = $crawler->filter('title');
+        $title = $titleNode->count() ? $titleNode->first()->text() : null;
+
         $description = null;
 
         // Ищем meta description
@@ -278,8 +286,14 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
         $stmt->execute([$args['id'], $statusCode, $h1, $title, $description]);
 
         $flash->addMessage('success', 'Страница успешно проверена');
+    // 2️⃣ РАЗДЕЛЯЕМ ОШИБКИ
+    } catch (ConnectException $e) {
+        $flash->addMessage('error', 'Не удалось подключиться к сайту');
+    } catch (RequestException $e) {
+        // Это сработает, если Ozon или WB пришлют 403 или 404
+        $flash->addMessage('error', 'Сайт заблокировал запрос или недоступен (ошибка 40x/50x)');
     } catch (\Exception $e) {
-        $flash->addMessage('error', 'Произошла ошибка при проверке');
+        $flash->addMessage('error', 'Произошла непредвиденная ошибка при анализе страницы');
     }
 
     return $response->withRedirect($router->urlFor('urls.show', ['id' => $args['id']]));
