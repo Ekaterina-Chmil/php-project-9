@@ -286,15 +286,14 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
         $stmt->execute([$args['id'], $statusCode, $h1, $title, $description]);
 
         $flash->addMessage('success', 'Страница успешно проверена');
-    // 2️⃣ РАЗДЕЛЯЕМ ОШИБКИ
-    } catch (ConnectException $e) {
-        $flash->addMessage('error', 'Не удалось подключиться к сайту');
-    } catch (RequestException $e) {
-        // Это сработает, если Ozon или WB пришлют 403 или 404
-        $flash->addMessage('error', 'Сайт заблокировал запрос или недоступен (ошибка 40x/50x)');
-    } catch (\Exception $e) {
-        $flash->addMessage('error', 'Произошла непредвиденная ошибка при анализе страницы');
-    }
+    // 2️⃣ ОШИБКИ
+} catch (ConnectException | RequestException $e) {
+    // Группируем два типа ошибок Guzzle в один блок
+    $flash->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
+} catch (\Exception $e) {
+    // Для всех остальных непредвиденных случаев
+    $flash->addMessage('error', 'Произошла непредвиденная ошибка при анализе страницы');
+}
 
     return $response->withRedirect($router->urlFor('urls.show', ['id' => $args['id']]));
 })->setName('urls.check');
