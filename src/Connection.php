@@ -2,7 +2,6 @@
 
 $databaseUrl = $_ENV['DATABASE_URL'] ?? getenv('DATABASE_URL');
 
-// Вместо die() — выбрасываем исключение
 if (!$databaseUrl) {
     throw new \RuntimeException('DATABASE_URL environment variable is not set');
 }

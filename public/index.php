@@ -8,6 +8,10 @@ use Valitron\Validator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
+use Dotenv\Dotenv;
+use Slim\Psr7\Response;
+use Slim\Exception\HttpNotFoundException;
+use Symfony\Component\DomCrawler\Crawler;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -18,7 +22,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Загружаем переменные окружения
 if (!isset($_ENV['DATABASE_URL'])) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+    $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
     $dotenv->load();
 }
 
@@ -91,7 +95,7 @@ $errorMiddleware->setDefaultErrorHandler(
         $renderer = $container->get('view');
 
         // Создаём ответ (или берём из аргументов, если есть)
-        $response = new \Slim\Psr7\Response();
+        $response = new Response();
 
         return $renderer->render($response->withStatus($statusCode), 'error.phtml', [
             'statusCode' => $statusCode,
@@ -126,8 +130,8 @@ $app->post('/urls', function ($request, $response) use ($container, $router) {
         $data = $request->getParsedBody()['url'] ?? [];
 
     // 2️⃣ ВАЛИДАЦИЯ через Valitron
-        \Valitron\Validator::lang('ru');
-        $v = new \Valitron\Validator($data);
+        Validator::lang('ru');
+        $v = new Validator($data);
 
         $v->rule('required', 'name')->message('URL не может быть пустым');
         $v->rule('lengthMax', 'name', 255)->message('URL слишком длинный');
@@ -137,7 +141,6 @@ $app->post('/urls', function ($request, $response) use ($container, $router) {
         $errors = $v->errors();
         $error = isset($errors['name']) ? reset($errors['name']) : 'Ошибка валидации';
 
-        $renderer->setLayout('layout.phtml');
         return $renderer->render($response->withStatus(422), 'home.phtml', [
             'error' => $error, // Здесь будет конкретный текст (пусто, длинно или криво)
             'urlValue' => $data['name'] ?? '',
@@ -184,25 +187,23 @@ $app->get('/urls', function ($request, $response) use ($container, $router) {
     $flash = $container->get('flash');
 
     // Получаем все сайты
-    $stmt = $pdo->query("
-        SELECT 
-            u.id,
-            u.name,
-            u.created_at,
-            c.status_code,
-            c.created_at as last_check
-        FROM urls u
-        LEFT JOIN (
-            SELECT DISTINCT ON (url_id) *
-            FROM url_checks
-            ORDER BY url_id, id DESC
-        ) c ON u.id = c.url_id
-        ORDER BY u.id DESC
-    ");
-    $urls = $stmt->fetchAll();
+    $urls = $pdo->query("SELECT id, name, created_at FROM urls ORDER BY id DESC")->fetchAll();
+
+// Получаем последние проверки для каждого сайта (упрощенно)
+    $sql = "SELECT DISTINCT ON (url_id) url_id, status_code, created_at 
+                           FROM url_checks 
+                           ORDER BY url_id, id DESC";
+    $checks = $pdo->query($sql)->fetchAll();
+
+// Превращаем проверки в удобный массив, где ключ — это id сайта
+    $lastChecks = [];
+    foreach ($checks as $check) {
+        $lastChecks[$check['url_id']] = $check;
+    }
 
     return $renderer->render($response, 'urls/index.phtml', [
         'urls' => $urls,
+        'lastChecks' => $lastChecks,
         'flash' => $flash,
         'router' => $router,
         'title' => 'Сайты - Анализатор страниц',  // ✅ Свой заголовок
@@ -221,7 +222,7 @@ $app->get('/urls/{id:[0-9]+}', function ($request, $response, $args) use ($conta
     $url = $stmt->fetch();
 
     if (!$url) {
-        throw new \Slim\Exception\HttpNotFoundException($request, 'Сайт не найден');
+        throw new HttpNotFoundException($request, 'Сайт не найден');
     }
 
     // Получаем проверки
@@ -250,7 +251,7 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
 
     if (!$url) {
         // ✅ Выбрасываем исключение — оно перехватится обработчиком ошибок!
-        throw new \Slim\Exception\HttpNotFoundException($request, 'Сайт не найден');
+        throw new HttpNotFoundException($request, 'Сайт не найден');
     }
 
     // Выполняем HTTP-запрос
@@ -261,9 +262,9 @@ $app->post('/urls/{id:[0-9]+}/checks', function ($request, $response, $args) use
         $html = (string) $guzzleResponse->getBody();
 
         // Парсим HTML
-        $crawler = new \Symfony\Component\DomCrawler\Crawler($html);
+        $crawler = new Crawler($html);
 
-        // 1️⃣ БЕЗОПАСНО извлекаем данные (учитель просил проверять наличие тегов)
+        // 1️⃣ БЕЗОПАСНО извлекаем данные
         $h1Node = $crawler->filter('h1');
         $h1 = $h1Node->count() ? $h1Node->first()->text() : null;
 
