@@ -78,7 +78,7 @@ $errorMiddleware->setDefaultErrorHandler(
     ) {
 
     // Определяем статус код
-        $statusCode = (int) $exception->getCode();
+        $statusCode = $exception->getCode();
         if ($statusCode < 400 || $statusCode >= 600) {
             $statusCode = 500;
         }
