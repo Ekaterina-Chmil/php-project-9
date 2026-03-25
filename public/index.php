@@ -96,7 +96,11 @@ $errorMiddleware->setDefaultErrorHandler(
 
         // Создаём ответ (или берём из аргументов, если есть)
         $response = new Response();
-
+        // Если код ошибки не является числом или он вне диапазона HTTP-статусов
+        if (!is_int($statusCode) || $statusCode < 400 || $statusCode >= 600) {
+            $statusCode = 500;
+        }
+        // Теперь PHP точно знает, что здесь будет int
         return $renderer->render($response->withStatus($statusCode), 'error.phtml', [
             'statusCode' => $statusCode,
             'message' => $message,
