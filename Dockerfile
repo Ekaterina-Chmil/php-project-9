@@ -1,6 +1,6 @@
 FROM php:8.3-cli
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libzip-dev \
     libpq-dev \
     postgresql-client \
